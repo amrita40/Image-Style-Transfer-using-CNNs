@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Style Transfer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #1a1a2e; color: white; font-family: 'Poppins', sans-serif; }
+        .drop-zone {
+            border: 2px dashed #4CAF50;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-3xl font-bold mb-6 text-green-400">Image Style Transfer</h1>
+    
+    <div class="w-96 p-6 bg-gray-800 rounded-lg shadow-lg">
+        <label class="block mb-2 font-semibold">Upload Content Image:</label>
+        <input type="file" id="content-input" accept="image/*" class="mb-4 bg-gray-700 text-white p-2 w-full">
+        <img id="content-preview" class="mt-2 hidden w-full rounded-lg">
+
+        <label class="block mt-4 mb-2 font-semibold">Upload Style Image:</label>
+        <input type="file" id="style-input" accept="image/*" class="mb-4 bg-gray-700 text-white p-2 w-full">
+        <img id="style-preview" class="mt-2 hidden w-full rounded-lg">
+
+        <button class="mt-4 w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition" id="transfer-btn">
+            Apply Style
+        </button>
+    </div>
+
+    <div id="output-container" class="mt-6 hidden text-center">
+        <h2 class="text-xl font-semibold">Stylized Image:</h2>
+        <img id="output-image" class="mt-4 w-80 rounded-lg shadow-lg" />
+    </div>
+
+    <script>
+        const contentInput = document.getElementById('content-input');
+        const styleInput = document.getElementById('style-input');
+        const contentPreview = document.getElementById('content-preview');
+        const stylePreview = document.getElementById('style-preview');
+        const transferBtn = document.getElementById('transfer-btn');
+        const outputContainer = document.getElementById('output-container');
+        const outputImage = document.getElementById('output-image');
+
+        // Preview the selected images
+        contentInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                contentPreview.src = URL.createObjectURL(file);
+                contentPreview.classList.remove('hidden');
+            }
+        });
+
+        styleInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                stylePreview.src = URL.createObjectURL(file);
+                stylePreview.classList.remove('hidden');
+            }
+        });
+
+        transferBtn.addEventListener('click', async () => {
+            if (!contentInput.files.length || !styleInput.files.length) {
+                alert("Please select both content and style images.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("content_image", contentInput.files[0]);
+            formData.append("style_image", styleInput.files[0]);
+
+            try {
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+
+                outputContainer.classList.remove("hidden");
+                outputImage.src = data.styled_image_url; // Correctly set the output image
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Something went wrong. Please try again!");
+            }
+        });
+    </script>
+</body>
+</html>
