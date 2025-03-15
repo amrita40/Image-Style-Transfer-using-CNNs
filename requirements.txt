@@ -4,4 +4,4 @@ torch==2.2.0
 torchvision==0.17.0  
 pillow  
 matplotlib  
-werkzeug  # Required for secure file handling
+werkzeug  
