@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
 import os
-from style_transfer import style_transfer  # Ensure this function works correctly
+from werkzeug.utils import secure_filename
+from style_transfer import style_transfer  # Ensure this function is correctly implemented
 
 app = Flask(__name__)
 
@@ -30,10 +31,15 @@ def upload_file():
         if content_file.filename == "" or style_file.filename == "":
             return jsonify({"error": "No file selected!"}), 400
 
+        # Sanitize filenames to prevent security issues
+        content_filename = secure_filename(content_file.filename)
+        style_filename = secure_filename(style_file.filename)
+
         # Define file paths
-        content_path = os.path.join(app.config["UPLOAD_FOLDER"], content_file.filename)
-        style_path = os.path.join(app.config["UPLOAD_FOLDER"], style_file.filename)
-        output_path = os.path.join(app.config["OUTPUT_FOLDER"], f"styled_{content_file.filename}")
+        content_path = os.path.join(app.config["UPLOAD_FOLDER"], content_filename)
+        style_path = os.path.join(app.config["UPLOAD_FOLDER"], style_filename)
+        output_filename = f"styled_{content_filename}"
+        output_path = os.path.join(app.config["OUTPUT_FOLDER"], output_filename)
 
         # Save files
         content_file.save(content_path)
@@ -50,8 +56,9 @@ def upload_file():
 
         print(f"🎨 Styled Image Generated at: {styled_image_path}")
 
-        # Return the path to the generated styled image
-        return jsonify({"styled_image_url": f"/{styled_image_path}"})
+        # Return the full URL of the generated styled image
+        styled_image_url = f"{request.host_url}static/output/{output_filename}"
+        return jsonify({"styled_image_url": styled_image_url})
 
     except Exception as e:
         print(f"❌ Error: {str(e)}")
@@ -61,5 +68,7 @@ def upload_file():
 def get_output_image(filename):
     return send_from_directory(app.config["OUTPUT_FOLDER"], filename)
 
+# Required for Render Deployment
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render assigns a dynamic port
+    app.run(host="0.0.0.0", port=port, debug=True)
